@@ -1,62 +1,70 @@
-import { useState } from 'react';
+import { addContact } from '../../redux/contactsSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { getContacts } from '../../redux/selectors';
+import Notiflix from 'notiflix';
+import { nanoid } from '@reduxjs/toolkit';
 import scss from './form.module.scss';
 
-const Form = ({ addContacts }) => {
-  const [name, setName] = useState('');
-  const [number, setNumber] = useState('');
-
-  const handleChange = evt => {
-    const { name, value } = evt.target;
-    switch (name) {
-      case 'name':
-        setName(value);
-
-        break;
-      case 'number':
-        setNumber(value);
-
-        break;
-
-      default:
-        break;
-    }
-  };
+const Form = () => {
+  const dispatch = useDispatch();
+  const contacts = useSelector(getContacts);
 
   const handleSubmit = e => {
     e.preventDefault();
     e.stopPropagation();
-    addContacts({ name, number });
-    setName('');
-    setNumber('');
+    const form = e.target;
+
+    const normalizedname = form.elements.name.value.toLowerCase();
+
+    if (
+      contacts.find(contact => contact.name.toLowerCase() === normalizedname)
+    ) {
+      Notiflix.Notify.warning(`${normalizedname} is already in contacts`);
+      return;
+    }
+    console.log(form.elements.name.value);
+
+    dispatch(
+      addContact({
+        id: nanoid(),
+        name: form.elements.name.value,
+        number: form.elements.number.value,
+      })
+    );
+    form.reset();
   };
 
   return (
     <form onSubmit={handleSubmit} className={scss.form}>
       <label htmlFor="name" className={scss.label}>
         <span>Name</span>
-        <input
-          className={scss.input}
-          type="text"
-          name="name"
-          value={name}
-          pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
-          title="Name may contain only letters, apostrophe, dash and spaces. For example Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan"
-          required
-          onChange={handleChange}
-        />
+        <div className={scss.inputWrapper}>
+          <input
+            className={scss.input}
+            type="text"
+            name="name"
+            placeholder='Name'
+            pattern="[A-Za-z]{1,32}"
+            title="Username must be one word"
+            required
+          />
+          <span></span>
+        </div>
       </label>
       <label htmlFor="number" className={scss.label}>
         <span>Number</span>
-        <input
-          className={scss.input}
-          type="tel"
-          name="number"
-          value={number}
-          pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
-          title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
-          required
-          onChange={handleChange}
-        />
+        <div className={scss.inputWrapper}>
+          <input
+            className={scss.input}
+            type="tel"
+            name="number"
+            placeholder='Number'
+            pattern="[\+]\d{2}[\(]\d{3}[\)]\d{7}"
+            title="Phone number must have format +38(050)1234567 and can start with +"
+            required
+          />
+          <span></span>
+        </div>
       </label>
       <button type="submit" className={scss.button}>
         Add contact
